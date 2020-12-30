@@ -32,8 +32,12 @@ codic config --show
 // デフォルトのコンフィグファイルを新規作成する
 codic config --make
 // コンフィグファイルの編集
-// casing(camel, pascal, lower underscore, upper underscore, hyphen)
-codic config edit -t <APIキー> -c <デフォルトcasing>
+codic config edit -t <APIキー> --c_A_A
+```
+
+削除
+```
+codic config remove
 ```
 
 # License

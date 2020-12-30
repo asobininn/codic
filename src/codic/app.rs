@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use super::{Config, Error, error::EditConfig, clap_params};
+use super::{Config, Error, error::EditConfig, clap_params::*};
 
 /// codicアプリケーション本体
 pub struct App {
@@ -9,6 +9,7 @@ pub struct App {
 
 
 impl App {
+
     /// 空のAppを生成
     pub fn new() -> Self {
         App {
@@ -45,7 +46,7 @@ impl App {
 
     /// clap machesを解析し、必要に応じてtext、token、casingを変更する
     pub async fn take_params(mut self) -> Result<Self, Error> {
-        let matches = clap_params::get_matches();
+        let matches = get_matches();
         // subcommand 
         if let Some(sub) = matches.subcommand_matches("config") {
             if sub.is_present("make") {
@@ -55,11 +56,16 @@ impl App {
             } else if let Some(edit) = sub.subcommand_matches("edit") {
                 let mut token: Option<String> = None;
                 let mut casing: Option<String> = None;
-                if let Some(o) = edit.value_of("token") {
+                if let Some(o) = edit.value_of("config token") {
                     token = Some(o.to_string());
                 }
-                if let Some(o) = edit.value_of("casing") {
-                    casing = Some(o.to_string());
+                if edit.is_present("config casing") {
+                    //casing = Some("upper underscore".to_string());
+                    for (i, c) in CONFIG_CASINGS.iter().enumerate() {
+                        if edit.is_present(c) {
+                            casing = Some(CASINGS[i].to_string());
+                        }
+                    }
                 }
                 if token.is_some() || casing.is_some() {
                     return Err(Error::ChosenEditConfig{command: EditConfig::Edit(token, casing)});
@@ -72,16 +78,10 @@ impl App {
             self.text = o.to_string();
         }
         // casing
-        if matches.is_present("camel") {
-            *self.config.casing_mut() = "camel".to_string();
-        } else if matches.is_present("pascal") {
-            *self.config.casing_mut() = "pascal".to_string();
-        } else if matches.is_present("lower underscore") {
-            *self.config.casing_mut() = "lower underscore".to_string();
-        } else if matches.is_present("upper underscore") {
-            *self.config.casing_mut() = "upper underscore".to_string();
-        } else if matches.is_present("hyphen") {
-            *self.config.casing_mut() = "hyphen".to_string();
+        for c in &CASINGS {
+            if matches.is_present(c) {
+                *self.config.casing_mut() = c.to_string();
+            }
         }
         Ok(self)
     }
@@ -100,7 +100,6 @@ impl App {
             .header(reqwest::header::AUTHORIZATION, &header)
             .send().await?
             .json().await?;
-        //println!("{:#?}", json);
         if let Some(errors) = json.get("errors") {
             return Err(Error::CodicError(
                 errors[0]["message"].to_string()

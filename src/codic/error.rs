@@ -5,6 +5,7 @@ use std::io;
 pub enum EditConfig {
     Make,
     Edit(Option<String>, Option<String>),
+    Remove,
     Show,
     None,
 }

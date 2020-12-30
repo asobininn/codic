@@ -31,21 +31,34 @@ async fn main() {
                     match command {
                         // 新しいファイルを生成
                         error::EditConfig::Make =>  {
-                            Config::make_default_file(&path).await.unwrap();
-                            println!("{} を作成します。tokenにCodic APIキーを入力してください\n{}",
-                                config_file, "codic config edit -t <token>");
+                            match Config::make_default_file(&path).await {
+                                Ok(_) => println!("{} を作成しました。tokenにCodic APIキーを入力してください、\n{}",
+                                    config_file, "codic config edit -t <token>"),
+                                Err(_) => println!("{}の作成に失敗しました。", path.to_string_lossy()),
+                            };
                         },
+                        // ファイルを表示
                         error::EditConfig::Show => {
-                            let config = Config::from_file(&path).unwrap();
-                            println!("{:?}", config);
+                            println!("{:?}", Config::from_file(&path).expect("ファイルの表示に失敗しました"));
                         },
+                        // ファイルを削除
+                        error::EditConfig::Remove => {
+                            match std::fs::remove_file(&path) {
+                                Ok(_) => println!("{}を削除しました。", path.to_string_lossy()),
+                                Err(_) => eprintln!("{}の削除に失敗しました。", path.to_string_lossy()),
+                            };
+                        },
+                        // ファイルを編集
                         error::EditConfig::Edit(token, casing) => {
-                            Config::edit(&path, token.as_deref(), casing.as_deref()).await.unwrap();
-                            println!("編集しました。");
-                            let config = Config::from_file(&path).unwrap();
-                            println!("{:?}", config);
+                            match Config::edit(&path, token.as_deref(), casing.as_deref()).await {
+                                Ok(_) => {
+                                    println!("編集しました。");
+                                    println!("{:?}", Config::from_file(&path).unwrap());
+                                },
+                                Err(_) => println!("{}の編集に失敗しました。", path.to_string_lossy()),
+                            };
                         },
-                        _ => (),
+                        error::EditConfig::None => (),
                     }
                 },
 
@@ -53,9 +66,11 @@ async fn main() {
                 Error::CannotOpenConfig{error} => {
                     println!("{} オープンエラー", config_file);
                     println!("{}", error);
-                    Config::make_default_file(&path).await.unwrap();
-                    println!("{} を作成します。tokenにCodic APIキーを入力してください\n{}",
-                                config_file, "codic config edit -t <token>");
+                    match Config::make_default_file(&path).await {
+                        Ok(_) => println!("{} を作成しました。tokenにCodic APIキーを入力してください、\n{}",
+                            config_file, "codic config edit -t <token>"),
+                        Err(_) => println!("{}の作成に失敗しました。", path.to_string_lossy()),
+                    };
                 },
 
                 // コンフィグファイルが破損していたら

@@ -51,6 +51,8 @@ impl App {
         if let Some(sub) = matches.subcommand_matches("config") {
             if sub.is_present("make") {
                 return Err(Error::ChosenEditConfig{command: EditConfig::Make});
+            } else if sub.is_present("remove") {
+                return Err(Error::ChosenEditConfig{command: EditConfig::Remove});
             } else if sub.is_present("show") {
                 return Err(Error::ChosenEditConfig{command: EditConfig::Show});
             } else if let Some(edit) = sub.subcommand_matches("edit") {
